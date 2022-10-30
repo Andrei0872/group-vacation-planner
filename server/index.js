@@ -1,14 +1,51 @@
-import express from "express";
-import { pool } from "./db/index.js";
+import express from 'express'
+import { pool } from './db/index.js'
+import cors from 'cors'
 
 const PORT = 8080;
 
 const app = express();
 
 app.use(express.json());
+app.use(cors());
 
-app.get("/test", (req, res) => {
-  res.json({ msg: "hello!" });
+app.get('/test', (req, res) => {
+  res.json({ msg: 'hello!' });
+});
+
+app.get('/activities-categories', async (req, res) => {
+  const client = await pool.connect();
+  let allCategories= await client.query('SELECT enum_range(NULL::category)');
+  res.json({ data: allCategories.rows[0].enum_range.slice(1,-1).split(',') });
+
+  client.release();
+});
+
+app.get('/activities', async(req, res) => {
+  const rawFilter = req.query.filter || 'all';
+
+  const filters = rawFilter.split(',').map(a => `'${a}'`);
+
+  const client = await pool.connect();
+  let result;
+  try {
+    if (rawFilter == 'all') {
+      result = await client.query(`SELECT * FROM activity`);
+    } else{
+      result = await client.query(`
+        SELECT * FROM activity WHERE
+        activity.category && ARRAY[${filters}]::category[];
+      `);
+    }
+  } 
+  catch (err) {
+    console.log(err);
+    return res.status(500).json({ message: 'An error occurred while fetching the data.' })
+  } finally {
+    client.release()
+  }
+
+  res.json({ data: result.rows });
 });
 
 app.listen(PORT, () => console.log(`Server up and running on port ${PORT}`));
