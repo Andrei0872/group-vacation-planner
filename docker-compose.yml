@@ -30,21 +30,22 @@ services:
       interval: 1s
       retries: 20
 
-  # pgadmin:
-  #   image: dpage/pgadmin4
-  #   environment:
-  #     PGADMIN_DEFAULT_EMAIL: foo@bar.com
-  #     PGADMIN_DEFAULT_PASSWORD: "${POSTGRES_PASSWORD}"
-  #   ports:
-  #     - "3003:80"
-  #   volumes:
-  #     - database_group_vacation_planner_pgadmin:/var/lib/pgadmin
-  #   networks:
-  #     - group_vacation_planner_dev
+  pgadmin:
+    image: dpage/pgadmin4
+    environment:
+      PGADMIN_DEFAULT_EMAIL: foo@bar.com
+      PGADMIN_DEFAULT_PASSWORD: "${POSTGRES_PASSWORD}"
+    ports:
+      - "3003:80"
+    volumes:
+      - database_group_vacation_planner_pgadmin:/var/lib/pgadmin
+    networks:
+      - group_vacation_planner_dev
 
 volumes:
   database_group_vacation_planner_dev:
-  # database_group_vacation_planner_pgadmin:
+  database_group_vacation_planner_pgadmin:
+
 
 networks:
   group_vacation_planner_dev:
