@@ -1,4 +1,4 @@
-import { Accordion, AccordionDetails, AccordionSummary, Autocomplete, TextField, Typography } from '@mui/material'
+import { Accordion, AccordionDetails, AccordionSummary, Autocomplete, Button, TextField, Typography } from '@mui/material'
 import './TripPlanner.css'
 import { DesktopDatePicker } from '@mui/x-date-pickers/DesktopDatePicker';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
@@ -8,15 +8,23 @@ import { useReducer } from 'react';
 import { useState } from 'react';
 import { useEffect } from 'react';
 import { config } from '../config';
+import io from 'socket.io-client';
 
+// const socket = io(`${config.WS_URL}`)
+const socket = io(`${config.API_URL}`)
 
-
-const Details = () => {
+const Details = (props) => {
   const options = [
     { label: 'Country1, City1', id: '1' },
     { label: 'Country1, City2', id: '2' },
   ]
-  
+
+  const { guests } = props;
+
+  const [isMemberAccordionOn, setIsMemberAccordionOn] = useState(false);
+
+  const generateInviteLink = () => {}
+
   return (
     <div className='details'>
       <h2 className='details__title'>Details</h2>
@@ -66,22 +74,33 @@ const Details = () => {
           </AccordionDetails>
         </Accordion>
 
-        <Accordion expanded={false}>
+        <Accordion onChange={() => setIsMemberAccordionOn(!isMemberAccordionOn)} expanded={isMemberAccordionOn}>
           <AccordionSummary
             expandIcon={<ExpandMoreIcon />}
             aria-controls="panel1bh-content"
             id="panel1bh-header"
           >
             <Typography sx={{ width: '33%', flexShrink: 0 }}>
-              Members
+              Guests
             </Typography>
           </AccordionSummary>
           <AccordionDetails>
-            <Typography>
-              Nulla facilisi. Phasellus sollicitudin nulla et quam mattis feugiat.
-              Aliquam eget maximus est, id dignissim quam.
-            </Typography>
-            test
+            <Button onClick={generateInviteLink}>Generate Invite Link</Button>
+
+            <ul>
+              {
+                guests?.length ? (
+                  guests.map(m => (
+                    <li key={m.id}>
+                      <span>{m.name}</span>
+                      <div>
+                        <button>x</button>
+                      </div>
+                    </li>
+                  ))
+                ) : 'No guests yet'
+              }
+            </ul>
           </AccordionDetails>
         </Accordion>
       </div>
@@ -279,13 +298,46 @@ const Header = () => {
   )
 }
 
+socket.connect()
+
 function TripPlanner () {
+
+  const [guests, setGuests] = useState([]);
+
+  useEffect(() => {
+
+    socket.on('connect', () => {
+      console.log('connect!');
+      // setIsConnected(true);
+    });
+
+    socket.on('disconnect', () => {
+      // setIsConnected(false);
+      console.log('disconnect!');
+    });
+
+    socket.on('pong', () => {
+      // setLastPong(new Date().toISOString());
+    });
+
+    socket.on('guestJoined', guest => {
+      // debugger;
+      setGuests(guests => [...guests, guest]);
+    })
+
+    return () => {
+      socket.off('connect');
+      socket.off('disconnect');
+      socket.off('pong');
+    };
+  }, []);
+  
   return (
     <main className='trip-planner'>
       <Header />
 
       <section className='trip-planner-plan'>
-        <Details />
+        <Details guests={guests} />
         <DndProvider backend={HTML5Backend}>
           <DaysPlanner />
           <Activities />

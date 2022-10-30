@@ -1,17 +1,23 @@
 import express from "express";
-import { pool } from "./db/index.js";
-import cors from "cors";
 import jwt from "jsonwebtoken";
+import { pool } from './db/index.js'
+import cors from 'cors'
+import http from 'http'
+import { Server } from 'socket.io';
 
 const PORT = 8080;
 
 const app = express();
-
 app.use(express.json());
 app.use(cors());
 
-app.get("/test", (req, res) => {
-  res.json({ msg: "hello!" });
+const server = http.createServer(app);
+const io = new Server(server, { cors: {
+  origin:' *'
+} });
+
+app.get('/test', (req, res) => {
+  res.json({ msg: 'hello!' });
 });
 
 app.get("/activities-categories", async (req, res) => {
@@ -50,7 +56,6 @@ app.get("/activities", async (req, res) => {
   res.json({ data: result.rows });
 });
 
-app.listen(PORT, () => console.log(`Server up and running on port ${PORT}`));
 
 app.post("/save-trip", async (req, res) => {
   const body = req.body;
@@ -126,7 +131,7 @@ app.post("/session/:jwt", (req, res) => {
     const verified = jwt.verify(token, jwtSecretKey);
 
     if (verified && token in inviteTokens) {
-      return res.send("Successfully Verified");
+      res.send("Successfully Verified");
     } else {
       // Access Denied
       return res.status(401).send(error);
@@ -137,6 +142,18 @@ app.post("/session/:jwt", (req, res) => {
   }
 
   const memberId = req.body.member_id;
+  io.emit('guestJoined', { id: memberId, name: `name-${memberId}` })
 });
 
-// app.console.log("pool");
+io.on('connection', (socket) => {
+  console.log('a user connected');
+
+  // io.emit('guestJoined', { id: 7, name: 'foo' })
+
+  // setTimeout(() => io.emit('guestJoined', { id: 8, name: 'foo' }), 3000)
+});
+
+server.listen(PORT, () => console.log(`Server up and running on port ${PORT}`));
+// app.listen(PORT, () => console.log(`Server up and running on port ${PORT}`));
+
+console.log("pool");
