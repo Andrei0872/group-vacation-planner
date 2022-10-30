@@ -5,6 +5,9 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { DndProvider, useDrag, useDrop } from 'react-dnd'
 import { HTML5Backend } from 'react-dnd-html5-backend'
 import { useReducer } from 'react';
+import { useState } from 'react';
+import { useEffect } from 'react';
+import { config } from '../config';
 
 
 
@@ -196,21 +199,31 @@ const Activity = (props) => {
     item: { activityId: 1, name: 'foobar' }
   }))
   
-  console.log({ isDragging });
-
   return (
     <li ref={drag} className={props.className}>
       {props.children}
     </li>
   )
 }
+const CATEGORY_ALL_OPTION = 'all';
 const Activities = () => {
+  const [categories, setCategories] = useState([]);
+
+  useEffect(() => {
+    fetch(`${config.API_URL}/activities-categories`)
+      .then(r => r.json())
+      .then(r => {
+        const categories = r.data;
+        setCategories([CATEGORY_ALL_OPTION, ...categories]);
+      });
+  }, []);
+
   return (
     <div className='activities'>
       <ul className='activities__categories'>
-        <li className='activities__category'>cat1</li>
-        <li className='activities__category'>cat2</li>
-        <li className='activities__category'>cat3</li>
+        {
+          categories.map(c => <li key={c} className='activities__category'>{c}</li>)
+        }
       </ul>
 
       <ul className='activities__list'>
