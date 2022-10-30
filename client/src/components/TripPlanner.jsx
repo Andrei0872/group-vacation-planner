@@ -2,6 +2,10 @@ import { Accordion, AccordionDetails, AccordionSummary, Autocomplete, TextField,
 import './TripPlanner.css'
 import { DesktopDatePicker } from '@mui/x-date-pickers/DesktopDatePicker';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import { DndProvider, useDrag, useDrop } from 'react-dnd'
+import { HTML5Backend } from 'react-dnd-html5-backend'
+import { useReducer } from 'react';
+
 
 
 const Details = () => {
@@ -83,9 +87,74 @@ const Details = () => {
 }
 
 const DayActivity = () => {}
+const createDayActivity = (overrides) => ({
+  activityId: -1,
+  activityName: '',
+  visitingDate: '',
+  note: '',
+  dayNumber: 0,
+  dayActivityId: Math.random().toString(36).slice(2, 7),
+  ...overrides,
+})
+const dayActivitiesReducer = (state, action) => {
+  const { type, payload } = action;
+
+  switch (type) {
+    case 'add': {
+      return [
+        ...state,
+        payload,
+      ]
+    }
+
+    case 'updated': {
+      const { dayActivityId, ...updatedActivity } = payload;
+
+      return state.map(a => a.dayActivityId === dayActivityId ? updatedActivity : a );
+    }
+  }
+}
+
 const DaysPlanner = () => {
   const daysCount = 3;
-  
+
+  const [dayActivities, dispatch] = useReducer(dayActivitiesReducer, []);
+
+  const [{ isOver, itemType }, drop] = useDrop(() => ({
+    accept: 'activity',
+    drop: (item, monitor) => {
+      const type = monitor.getItemType();
+      console.log({ type, item });
+      console.log('dropping!');
+
+      if (type === 'activity') {
+        const newActivity = createDayActivity({
+          activityId: item.activityId,
+          activityName: item.name,
+        });
+
+        dispatch({ payload: newActivity, type: 'add' });
+      }
+    },
+    collect: monitor => ({
+      isOver: !!monitor.isOver(),
+      itemType: monitor.getItemType(),
+    }),
+  }), []);
+
+  const onActivityChanged = (dayActivityId, updatedKey, updatedValue) => {
+    const updatedDayActivity = dayActivities.find(da => da.dayActivityId === dayActivityId);
+    
+    dispatch({
+      type: 'updated',
+      payload: {
+        dayActivityId,
+        ...updatedDayActivity,
+        [updatedKey]: updatedValue,
+      }
+    })
+  }
+
   return (
     <div className='days-planner'>
       <ul className='days-planner__days'>
@@ -100,20 +169,41 @@ const DaysPlanner = () => {
         }
       </ul>
 
-      <ul className='selected-day__activities'>
-        <li data-index={1} className='selected-day__activity'>
-          <div className='selected-day__hrs'><input type="text" /></div>
-          <div className='selected-day__name'>name</div>
-          <textarea className='selected-day__notes' name="" id="" cols="30" rows="3"></textarea>
-          <div className='selected-day__actions'>
-            <button>x</button>
-          </div>
-        </li>
+      <ul data-is-empty={dayActivities.length === 0} ref={drop} className='selected-day__activities'>
+        {
+          dayActivities.map((a, i) => (
+            <li data-index={i + 1} className='selected-day__activity'>
+              <div className='selected-day__hrs'><input type="text" onChange={ev => onActivityChanged(a.dayActivityId, 'visitingDate', ev.target.value)} value={a.visitingDate} /></div>
+              <div className='selected-day__name'>{a.activityName}</div>
+              <textarea value={a.notes} onChange={ev => onActivityChanged(a.dayActivityId, 'note', ev.target.value)} className='selected-day__notes' name="" id="" cols="30" rows="3"></textarea>
+              <div className='selected-day__actions'>
+                <button>x</button>
+              </div>
+            </li>
+          ))
+        }
       </ul>
     </div>
   )
 }
 
+const Activity = (props) => {
+  const [{ isDragging }, drag] = useDrag(() => ({
+    type: 'activity',
+    collect: (monitor) => ({
+      isDragging: !!monitor.isDragging()
+    }),
+    item: { activityId: 1, name: 'foobar' }
+  }))
+  
+  console.log({ isDragging });
+
+  return (
+    <li ref={drag} className={props.className}>
+      {props.children}
+    </li>
+  )
+}
 const Activities = () => {
   return (
     <div className='activities'>
@@ -124,9 +214,9 @@ const Activities = () => {
       </ul>
 
       <ul className='activities__list'>
-        <li className='activity'>act11</li>
-        <li className='activity'>act12</li>
-        <li className='activity'>act13</li>
+        <Activity className='activity'>act11</Activity>
+        <Activity className='activity'>act12</Activity>
+        <Activity className='activity'>act13</Activity>
       </ul>
     </div>
   )
@@ -147,8 +237,10 @@ function TripPlanner () {
 
       <section className='trip-planner-plan'>
         <Details />
-        <DaysPlanner />
-        <Activities />
+        <DndProvider backend={HTML5Backend}>
+          <DaysPlanner />
+          <Activities />
+        </DndProvider>
       </section>
     </main>
   )

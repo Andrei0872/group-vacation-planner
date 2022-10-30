@@ -106,7 +106,7 @@ li.days-planner__day {
   --left-space: 6.1rem;
 }
 
-.selected-day__activities::after {
+.selected-day__activities:not([data-is-empty=true])::after {
   content: '';
   position: absolute;
   height: 100%;
@@ -163,4 +163,6 @@ li.activity {
 
 .days-planner {
   border: 1px solid black;
+  display: flex;
+  flex-direction: column;
 }
