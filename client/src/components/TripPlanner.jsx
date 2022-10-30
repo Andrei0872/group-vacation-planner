@@ -9,21 +9,45 @@ import { useState } from 'react';
 import { useEffect } from 'react';
 import { config } from '../config';
 import io from 'socket.io-client';
+import moment from 'moment'
 
 // const socket = io(`${config.WS_URL}`)
 const socket = io(`${config.API_URL}`)
 
 const Details = (props) => {
   const options = [
-    { label: 'Country1, City1', id: '1' },
-    { label: 'Country1, City2', id: '2' },
+    { label: 'Romania, Bucuresti', id: '1' },
   ]
 
-  const { guests } = props;
+  const {
+    guests,
+    datesChanged = () => {}
+  } = props;
 
   const [isMemberAccordionOn, setIsMemberAccordionOn] = useState(false);
+  const [startDate, setStartDate] = useState(null);
+  const [endDate, setEndDate] = useState(null);
+
 
   const generateInviteLink = () => {}
+
+  const onStartDateChanged = (val) => {
+    setStartDate(val);
+
+    if (val && endDate) {
+      const daysCount = endDate.diff(val, 'days');
+      datesChanged(daysCount);
+    }
+  }
+
+  const onEndDateChanged = (val) => {
+    setEndDate(val);
+
+    if (startDate && val) {
+      const daysCount = val.diff(startDate, 'days');
+      datesChanged(daysCount);
+    }
+  }
 
   return (
     <div className='details'>
@@ -33,6 +57,7 @@ const Details = (props) => {
         <Autocomplete
           disablePortal
           options={options}
+          defaultValue={options[0]}
           sx={{ width: 300 }}
           renderInput={(params) => <TextField {...params} label="City" />}
         />
@@ -40,16 +65,16 @@ const Details = (props) => {
         <DesktopDatePicker
           label="Start Date"
           inputFormat="MM/DD/YYYY"
-          // value={value}
-          // onChange={handleChange}
+          value={startDate}
+          onChange={val => onStartDateChanged(val)}
           renderInput={(params) => <TextField {...params} />}
         />
 
         <DesktopDatePicker
           label="End Date"
           inputFormat="MM/DD/YYYY"
-          // value={value}
-          // onChange={handleChange}
+          value={endDate}
+          onChange={val => onEndDateChanged(val)}
           renderInput={(params) => <TextField {...params} />}
         />
 
@@ -137,8 +162,8 @@ const dayActivitiesReducer = (state, action) => {
   }
 }
 
-const DaysPlanner = () => {
-  const daysCount = 3;
+const DaysPlanner = (props) => {
+  const { daysCount } = props;
 
   const [dayActivities, dispatch] = useReducer(dayActivitiesReducer, []);
 
@@ -181,13 +206,15 @@ const DaysPlanner = () => {
     <div className='days-planner'>
       <ul className='days-planner__days'>
         {
-          Array.from({ length: daysCount })
-            .map((_, i) => <li
-                className='days-planner__day'
-              >
-                {i + 1}
-              </li>
-            )
+          daysCount ? (
+            Array.from({ length: daysCount })
+              .map((_, i) => <li
+                  className='days-planner__day'
+                >
+                  {i + 1}
+                </li>
+              )
+          ) : 'Both start and end dates must be valid and selected.'
         }
       </ul>
 
@@ -301,8 +328,8 @@ const Header = () => {
 socket.connect()
 
 function TripPlanner () {
-
   const [guests, setGuests] = useState([]);
+  const [daysCount, setDaysCount] = useState(0);
 
   useEffect(() => {
 
@@ -332,14 +359,20 @@ function TripPlanner () {
     };
   }, []);
   
+  const onDatesChanged = (daysCount) => {
+    if (daysCount >= 0) {
+      setDaysCount(daysCount);
+    }
+  }
+
   return (
     <main className='trip-planner'>
       <Header />
 
       <section className='trip-planner-plan'>
-        <Details guests={guests} />
+        <Details guests={guests} datesChanged={onDatesChanged} />
         <DndProvider backend={HTML5Backend}>
-          <DaysPlanner />
+          <DaysPlanner daysCount={daysCount} />
           <Activities />
         </DndProvider>
       </section>
