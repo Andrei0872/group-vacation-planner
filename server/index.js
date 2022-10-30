@@ -1,6 +1,7 @@
-import express from 'express'
-import { pool } from './db/index.js'
-import cors from 'cors'
+import express from "express";
+import { pool } from "./db/index.js";
+import cors from "cors";
+import jwt from "jsonwebtoken";
 
 const PORT = 8080;
 
@@ -9,40 +10,41 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
-app.get('/test', (req, res) => {
-  res.json({ msg: 'hello!' });
+app.get("/test", (req, res) => {
+  res.json({ msg: "hello!" });
 });
 
-app.get('/activities-categories', async (req, res) => {
+app.get("/activities-categories", async (req, res) => {
   const client = await pool.connect();
-  let allCategories= await client.query('SELECT enum_range(NULL::category)');
-  res.json({ data: allCategories.rows[0].enum_range.slice(1,-1).split(',') });
+  let allCategories = await client.query("SELECT enum_range(NULL::category)");
+  res.json({ data: allCategories.rows[0].enum_range.slice(1, -1).split(",") });
 
   client.release();
 });
 
-app.get('/activities', async(req, res) => {
-  const rawFilter = req.query.filter || 'all';
+app.get("/activities", async (req, res) => {
+  const rawFilter = req.query.filter || "all";
 
-  const filters = rawFilter.split(',').map(a => `'${a}'`);
+  const filters = rawFilter.split(",").map((a) => `'${a}'`);
 
   const client = await pool.connect();
   let result;
   try {
-    if (rawFilter == 'all') {
+    if (rawFilter == "all") {
       result = await client.query(`SELECT * FROM activity`);
-    } else{
+    } else {
       result = await client.query(`
         SELECT * FROM activity WHERE
         activity.category && ARRAY[${filters}]::category[];
       `);
     }
-  } 
-  catch (err) {
+  } catch (err) {
     console.log(err);
-    return res.status(500).json({ message: 'An error occurred while fetching the data.' })
+    return res
+      .status(500)
+      .json({ message: "An error occurred while fetching the data." });
   } finally {
-    client.release()
+    client.release();
   }
 
   res.json({ data: result.rows });
@@ -100,5 +102,41 @@ app.post("/save-trip", async (req, res) => {
 
   res.status(201).json({ message: "trip sucessfully added!" });
 });
+const inviteTokens = {};
+app.post("/generateToken", (req, res) => {
+  let jwtSecretKey = "secret-key";
+  let data = {
+    time: Date(),
+    organiser_id: 1,
+    trip_id: 1,
+  };
 
-console.log("pool");
+  const token = jwt.sign(data, jwtSecretKey);
+  inviteTokens[token] = [1, 1];
+  res.cookie("jwt", token);
+  res.send(token);
+});
+
+app.post("/session/:jwt", (req, res) => {
+  // token validation
+  const token = req.params.jwt;
+  let jwtSecretKey = "secret-key";
+
+  try {
+    const verified = jwt.verify(token, jwtSecretKey);
+
+    if (verified && token in inviteTokens) {
+      return res.send("Successfully Verified");
+    } else {
+      // Access Denied
+      return res.status(401).send(error);
+    }
+  } catch (error) {
+    // Access Denied
+    return res.status(401).send(error);
+  }
+
+  const memberId = req.body.member_id;
+});
+
+// app.console.log("pool");
