@@ -13,7 +13,7 @@ app.get("/test", (req, res) => {
 
 app.listen(PORT, () => console.log(`Server up and running on port ${PORT}`));
 
-app.post("/save-trip", async (req, rest) => {
+app.post("/save-trip", async (req, res) => {
   const body = req.body;
   console.log(body);
 
@@ -53,6 +53,8 @@ app.post("/save-trip", async (req, rest) => {
   } finally {
     client.release();
   }
+
+  res.status(201).json({ message: "trip sucessfully added!" });
 });
 
 console.log("pool");
