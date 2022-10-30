@@ -46,7 +46,14 @@ app.post("/save-trip", async (req, res) => {
         "INSERT INTO trip_activity(trip_id, activity_id, day_number, order_number, visiting_time, note) VALUES($1, $2, $3, $4, $5, $6)",
         values
       );
-      values = [];
+    }
+
+    for (let i = 0; i < body.members.length; i++) {
+      values = [body.members[i], tripId];
+      res = await client.query(
+        "INSERT INTO trip_members(user_id, trip_id) VALUES($1, $2)",
+        values
+      );
     }
   } catch (err) {
     console.log(err);
