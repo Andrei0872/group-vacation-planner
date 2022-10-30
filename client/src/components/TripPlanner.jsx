@@ -217,6 +217,13 @@ const Activities = () => {
       return;
     }
 
+    if (isAllSelected && !selectedCategories[CATEGORY_ALL_OPTION]) {
+      setSelectedCategories({
+        [CATEGORY_ALL_OPTION]: true
+      });
+      return;
+    }
+
     const shouldAllBeUnselected = !isAllSelected && !selectedCategories[c];
     
     setSelectedCategories({
