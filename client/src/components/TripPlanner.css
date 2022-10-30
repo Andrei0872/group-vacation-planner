@@ -4,11 +4,6 @@
   flex-grow: 1;
 }
 
-.trip-planner-header {
-  padding: 2rem 1rem;
-  background: cornflowerblue;
-}
-
 .details {
   display: flex;
   flex-direction: column;
@@ -21,7 +16,6 @@
 
 .trip-planner-header {
   padding: 2rem 1rem;
-  background: cornflowerblue;
 }
 
 .details {
@@ -111,7 +105,7 @@ li.days-planner__day {
   position: absolute;
   height: 100%;
   width: 3px;
-  background: red;
+  background: cornflowerblue;
   top: 0;
   left: var(--left-space);
 }
@@ -123,6 +117,7 @@ li.days-planner__day {
 
 .selected-day__notes {
   flex-grow: 1;
+  resize: vertical;
 }
 
 /* Activities */

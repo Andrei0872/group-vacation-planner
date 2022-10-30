@@ -155,9 +155,14 @@ const dayActivitiesReducer = (state, action) => {
     }
 
     case 'updated': {
-      const { dayActivityId, ...updatedActivity } = payload;
+      debugger;
+      return state.map(a => a.dayActivityId === payload.dayActivityId ? payload : a );
+    }
 
-      return state.map(a => a.dayActivityId === dayActivityId ? updatedActivity : a );
+    case 'deleted': {
+      const { dayActivityId } = payload;
+
+      return state.filter(a => a.dayActivityId !== dayActivityId)
     }
   }
 }
@@ -166,6 +171,7 @@ const DaysPlanner = (props) => {
   const { daysCount } = props;
 
   const [dayActivities, dispatch] = useReducer(dayActivitiesReducer, []);
+  const [crtSelectedDay, setCrtSelectedDay] = useState(0);
 
   const [{ isOver, itemType }, drop] = useDrop(() => ({
     accept: 'activity',
@@ -189,6 +195,8 @@ const DaysPlanner = (props) => {
     }),
   }), []);
 
+  const crtDayActivities = dayActivities.filter(da => da.dayNumber === crtSelectedDay);
+
   const onActivityChanged = (dayActivityId, updatedKey, updatedValue) => {
     const updatedDayActivity = dayActivities.find(da => da.dayActivityId === dayActivityId);
     
@@ -202,6 +210,15 @@ const DaysPlanner = (props) => {
     })
   }
 
+  const onActivityDeleted = (dayActivityId) => {
+    dispatch({
+      type: 'deleted',
+      payload: {
+        dayActivityId,
+      },
+    })
+  }
+
   return (
     <div className='days-planner'>
       <ul className='days-planner__days'>
@@ -209,6 +226,7 @@ const DaysPlanner = (props) => {
           daysCount ? (
             Array.from({ length: daysCount })
               .map((_, i) => <li
+                  onClick={() => setCrtSelectedDay(i)}
                   className='days-planner__day'
                 >
                   {i + 1}
@@ -218,15 +236,15 @@ const DaysPlanner = (props) => {
         }
       </ul>
 
-      <ul data-is-empty={dayActivities.length === 0} ref={drop} className='selected-day__activities'>
+      <ul data-is-empty={crtDayActivities.length === 0} ref={drop} className='selected-day__activities'>
         {
-          dayActivities.map((a, i) => (
-            <li data-index={i + 1} className='selected-day__activity'>
+          crtDayActivities.map((a, i) => (
+            <li key={a.dayActivityId} data-index={i + 1} className='selected-day__activity'>
               <div className='selected-day__hrs'><input type="text" onChange={ev => onActivityChanged(a.dayActivityId, 'visitingDate', ev.target.value)} value={a.visitingDate} /></div>
               <div className='selected-day__name'>{a.activityName}</div>
               <textarea value={a.notes} onChange={ev => onActivityChanged(a.dayActivityId, 'note', ev.target.value)} className='selected-day__notes' name="" id="" cols="30" rows="3"></textarea>
               <div className='selected-day__actions'>
-                <button>x</button>
+                <button onClick={() => onActivityDeleted(a.dayActivityId)}>x</button>
               </div>
             </li>
           ))
@@ -320,7 +338,8 @@ const Activities = () => {
 const Header = () => {
   return (
     <div className='trip-planner-header'>
-      Header
+      <Button variant="contained">Start Voting Session</Button>
+      <Button variant="contained" color='success'>Save trip</Button>
     </div>
   )
 }
