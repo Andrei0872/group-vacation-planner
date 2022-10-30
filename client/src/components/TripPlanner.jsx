@@ -132,7 +132,7 @@ const DaysPlanner = () => {
 
       if (type === 'activity') {
         const newActivity = createDayActivity({
-          activityId: item.activityId,
+          activityId: item.id,
           activityName: item.name,
         });
 
@@ -196,7 +196,7 @@ const Activity = (props) => {
     collect: (monitor) => ({
       isDragging: !!monitor.isDragging()
     }),
-    item: { activityId: 1, name: 'foobar' }
+    item: props.activity
   }))
   
   return (
@@ -207,7 +207,24 @@ const Activity = (props) => {
 }
 const CATEGORY_ALL_OPTION = 'all';
 const Activities = () => {
-  const [categories, setCategories] = useState([]);
+  const [categories, setCategories] = useState([CATEGORY_ALL_OPTION]);
+  const [selectedCategories, setSelectedCategories] = useState({ [CATEGORY_ALL_OPTION]: true });
+  const [activities, setActivities] = useState([]);
+
+  const toggleSelectCategory = c => {
+    const isAllSelected = c === CATEGORY_ALL_OPTION;
+    if (isAllSelected && selectedCategories[CATEGORY_ALL_OPTION]) {
+      return;
+    }
+
+    const shouldAllBeUnselected = !isAllSelected && !selectedCategories[c];
+    
+    setSelectedCategories({
+      ...selectedCategories,
+      [c]: !selectedCategories[c],
+      ...shouldAllBeUnselected && { [CATEGORY_ALL_OPTION]: false }
+    })
+  }
 
   useEffect(() => {
     fetch(`${config.API_URL}/activities-categories`)
@@ -218,18 +235,30 @@ const Activities = () => {
       });
   }, []);
 
+  useEffect(() => {
+    const categoryAsFilters = Object.keys(selectedCategories).filter(k => !!selectedCategories[k]).join(',');
+
+    fetch(`${config.API_URL}/activities?filter=${categoryAsFilters}`)
+      .then(r => r.json())
+      .then(r => {
+        setActivities(r.data);
+      });
+  }, [selectedCategories]);
+
+  console.log(selectedCategories);
+
   return (
     <div className='activities'>
       <ul className='activities__categories'>
         {
-          categories.map(c => <li key={c} className='activities__category'>{c}</li>)
+          categories.map(c => <li key={c} onClick={() => toggleSelectCategory(c)} className={`activities__category ${selectedCategories[c] ? 'activities__category--selected' : ''}`}>{c}</li>)
         }
       </ul>
 
       <ul className='activities__list'>
-        <Activity className='activity'>act11</Activity>
-        <Activity className='activity'>act12</Activity>
-        <Activity className='activity'>act13</Activity>
+        {
+          activities.map(a => <Activity activity={a} className='activity'>{a.name}</Activity>)
+        }
       </ul>
     </div>
   )

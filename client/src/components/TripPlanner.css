@@ -166,3 +166,7 @@ li.activity {
   display: flex;
   flex-direction: column;
 }
+
+.activities__category--selected {
+  background-color: yellowgreen;
+}
