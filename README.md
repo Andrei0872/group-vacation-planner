@@ -1,5 +1,7 @@
 # Group Vacation Planner
 
+The planning document can be found [here](https://docs.google.com/document/d/1p73la6_VvWuX2N0tbP8625j2QPfeewXSOQ0D_Dk-QOI/edit?usp=sharing).
+
 - [Group Vacation Planner](#group-vacation-planner)
   - [Setting up](#setting-up)
     - [`.env` file](#env-file)
