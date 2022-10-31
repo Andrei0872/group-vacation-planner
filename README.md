@@ -10,6 +10,7 @@
   - [Tips](#tips)
     - [Modifying the DB schema](#modifying-the-db-schema)
     - [Debugging the server app](#debugging-the-server-app)
+  - [UML](#uml)
 
 ## Setting up
 
@@ -71,3 +72,11 @@ docker-compose up
 
 1. select the proper debug profile
 2. press F5
+
+---
+
+## UML
+
+<div style="text-align: center;">
+  <img src="./pictures/uml.png">
+</div>
